@@ -8,16 +8,45 @@
 */
 
 #include <iostream>
+#include <string>
+
+class Console {
+public:
+    static void ForegroundColor(int Red, int Green, int Blue) { 
+        std::cout << "\x1b[38;2;" << Red << ";" << Green << ";" << Blue << "m"; 
+    }
+    static void BackgroundColor(int Red, int Green, int Blue) { 
+        std::cout << "\x1b[48;2;" << Red << ";" << Green << ";" << Blue << "m"; 
+    }
+    static void ResetColor() { std::cout << "\x1b[0m"; }
+
+    static void Write(const std::string& str = "") { std::cout << str; }
+    static void WriteLine(const std::string& str = "") { std::cout << str << std::endl; }
+    static void Write(char chr) { std::cout << chr; }
+    static void WriteLine(char chr) { std::cout << chr << std::endl; }
+
+    static void Clear() { std::cout << "\033[2J\033[H"; }
+
+    static void MoveCursor(int x, int y) { std::cout << "\033[" << x << ";" << y << "H"; }
+    static void ResetCursor() { std::cout << "\033[9;1H"; }
+
+    static std::string ReadLine() { 
+        std::string str;
+        std::getline(std::cin, str);
+        return str;
+    }
+};
 
 
-static enum GameState : uint8_t {
+
+enum GameState : uint8_t {
     NoWinner,
     WhiteWins,
     BlackWins
 };
 
 // (First bit reserved for color 1b)[Type 3b]'[Val 4b] : 0b0000'0000
-static enum Piece : uint8_t {
+enum Piece : uint8_t {
 	None =      0b0000'0000,
 
     WPawn =     0b0001'0001,
@@ -35,7 +64,7 @@ static enum Piece : uint8_t {
     BKing =     0b1110'1111,
 };
 
-static char toChar(const Piece& piece) {
+char toChar(const Piece& piece) {
     switch (piece >> 4) {
         case 1: case 9: return 'P'; break;
         case 2: case 10: return 'N'; break;
@@ -50,7 +79,7 @@ static char toChar(const Piece& piece) {
 class Board {
 private:
     GameState gameState = NoWinner;
-    Piece BoardData[8][8] = {
+    Piece Data[8][8] = {
         { BRook,    BKnight,    BBishop,    BQueen,     BKing,      BBishop,    BKnight,    BRook },
         { BPawn,    BPawn,      BPawn,      BPawn,      BPawn,      BPawn,      BPawn,      BPawn }, 
 		{ None,     None,       None,       None,       None,       None,       None,       None  },
@@ -64,14 +93,14 @@ public:
     void DrawBoard() {
         for (int y = 0; y < 8; y++) {
             for (int x = 0; x < 8; x++) {
-                std::cout << ((x + y) % 2 == 0 ? "\x1b[48;2;241;217;192m" : "\x1b[48;2;169;122;101m"); // Background color.
-                std::cout << (BoardData[y][x] >> 7 != 1 ? "\x1b[38;2;255;255;255m" : "\x1b[38;2;0;0;0m"); // Foreground color.
+                (x + y) % 2 == 0 ? Console::BackgroundColor(241, 217, 192) : Console::BackgroundColor(169, 122, 101);
+                Data[y][x] >> 7 != 1 ? Console::ForegroundColor(255, 255, 255) : Console::ForegroundColor(45, 45, 45);
 
-                std::cout << " " << toChar(BoardData[y][x]) << " ";
+                Console::Write(" " + std::string(1, toChar(Data[y][x])) + " ");
 
-                std::cout << "\x1b[0m"; // Reset Color.
+                Console::ResetColor();
             }
-            std::cout << std::endl;
+            Console::WriteLine();
         }
     }
 };
@@ -80,32 +109,32 @@ int main() {
     Board board = Board();
 
     // Welcome message.
-    std::cout << " _    _      _                            _____       _____ _                               " << std::endl;
-    std::cout << "| |  | |    | |                          |_   _|     /  __ \\ |                    _     _   " << std::endl;
-    std::cout << "| |  | | ___| | ___ ___  _ __ ___   ___    | | ___   | /  \\/ |__   ___  ___ ___ _| |_ _| |_ " << std::endl;
-    std::cout << "| |/\\| |/ _ \\ |/ __/ _ \\| '_ ` _ \\ / _ \\   | |/ _ \\  | |   | '_ \\ / _ \\/ __/ __|_   _|_   _|" << std::endl;
-    std::cout << "\\  /\\  /  __/ | (_| (_) | | | | | |  __/   | | (_) | | \\__/\\ | | |  __/\\__ \\__ \\ |_|   |_|  " << std::endl;
-    std::cout << " \\/  \\/ \\___|_|\\___\\___/|_| |_| |_|\\___|   \\_/\\___/   \\____/_| |_|\\___||___/___/            \n\n" << std::endl;
+    Console::WriteLine(" _    _      _                            _____       _____ _                               ");
+    Console::WriteLine("| |  | |    | |                          |_   _|     /  __ \\ |                    _     _   ");
+    Console::WriteLine("| |  | | ___| | ___ ___  _ __ ___   ___    | | ___   | /  \\/ |__   ___  ___ ___ _| |_ _| |_ ");
+    Console::WriteLine("| |/\\| |/ _ \\ |/ __/ _ \\| '_ ` _ \\ / _ \\   | |/ _ \\  | |   | '_ \\ / _ \\/ __/ __|_   _|_   _|");
+    Console::WriteLine("\\  /\\  /  __/ | (_| (_) | | | | | |  __/   | | (_) | | \\__/\\ | | |  __/\\__ \\__ \\ |_|   |_|  ");
+    Console::WriteLine(" \\/  \\/ \\___|_|\\___\\___/|_| |_| |_|\\___|   \\_/\\___/   \\____/_| |_|\\___||___/___/            \n\n");
 
-    std::cout << "Press [ENTER] to start!";
-    std::cin.get();
+    Console::Write("Press [ENTER] to start!");
+    Console::ReadLine();
 
     do {
-        std::cout << "\033[2J\033[H"; // Clear the console.
+        Console::Clear();
         board.DrawBoard();
 
         // Print out Algebraic Chess Notation guide.
-        std::cout << "\033[1;28H"; // Move to right side of chess board.
-        std::cout << "Algebraic Chess Notation:";
-        std::cout << "\033[2;28H"; // Move to right side of chess board.
-        std::cout << "\tidk gl bro.";
-        std::cout << "\033[9;1H"; // Reset to bottom of board.
+        Console::MoveCursor(1, 28);
+        Console::Write("Algebraic Chess Notation:");
+        Console::MoveCursor(2, 28);
+        Console::Write("\tidk gl bro.");
+        Console::ResetCursor();
 
-        std::cout << "\nYour move:";
-        std::cin.get();
-    } while (true);
+        Console::Write("\nYour move:");
+        Console::ReadLine();
+    } while (false);
 
-    std::cout << "\n\nPress [ENTER] to close the program.";
-    std::cin.get();
+    Console::Write("\n\nPress [ENTER] to close the program.");
+    Console::ReadLine();
     return 0;
 }
